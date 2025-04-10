@@ -1,0 +1,93 @@
+-- EC_IT143_W4.2_hello_world_s1_fq.sql
+-- Step 1: Define the Question
+
+-- Question:
+-- Which players are in the U17 team and have a monthly salary greater than 5000?
+-- EC_IT143_W4.2_hello_world_s2_fq.sql
+-- Step 2: Create a pathway to the answer
+
+-- Strategy:
+-- Join tblPlayerDim to tblTeamDim to get team name and player.
+-- Join tblPlayerFact to get salary info.
+-- Apply filters for U17 and salary > 5000.
+
+-- Next step: Create the ad hoc query that implements this.
+-- EC_IT143_W4.2_hello_world_s3_fq.sql
+-- Step 3: Ad hoc query to answer our question
+
+SELECT 
+    p.pl_id,
+    p.pl_name,
+    t.t_code AS team_level,
+    f.mtd_salary
+FROM 
+    MyFC.dbo.tblPlayerDim p
+JOIN 
+    MyFC.dbo.tblTeamDim t ON p.t_id = t.t_id
+JOIN 
+    MyFC.dbo.tblPlayerFact f ON p.pl_id = f.pl_id
+WHERE 
+    t.t_code = 'U17'
+    AND f.mtd_salary > 5000;
+	-- EC_IT143_W4.2_hello_world_s4_fq.sql
+-- Step 4: Create a view for U17 players with salary > 5000
+
+CREATE VIEW,
+vw_U17_HighSalaryPlayers 
+AS
+SELECT 
+    p.pl_id,
+    p.pl_name,
+    t.t_code AS team_level,
+    f.mtd_salary
+FROM 
+    MyFC.dbo.tblPlayerDim p
+JOIN 
+    MyFC.dbo.tblTeamDim t ON p.t_id = t.t_id
+JOIN 
+    MyFC.dbo.tblPlayerFact f ON p.pl_id = f.pl_id
+WHERE 
+    t.t_code = 'U17'
+    AND f.mtd_salary > 5000;
+	-- EC_IT143_W4.2_hello_world_s5.1_fq.sql
+-- Step 5.1: Create table from view
+
+SELECT * 
+INTO tblU17_HighSalaryPlayers
+FROM "vw_U17_HighSalaryPlayers";
+-- EC_IT143_W4.2_hello_world_s5.2_fq.sql
+-- Step 5.2: Drop and re-create table with PK and constraints
+
+DROP TABLE IF EXISTS tblU17_HighSalaryPlayers;
+
+CREATE TABLE tblU17_HighSalaryPlayers (
+    pl_id INT PRIMARY KEY,
+    pl_name VARCHAR(100) NOT NULL,
+    team_level VARCHAR(10) NOT NULL,
+    mtd_salary DECIMAL(10, 2) NOT NULL DEFAULT 0
+);
+-- EC_IT143_W4.2_hello_world_s6_fq.sql
+-- Step 6: Load the refined table from the view
+
+TRUNCATE TABLE tblU17_HighSalaryPlayers;
+
+INSERT INTO tblU17_HighSalaryPlayers (pl_id, pl_name, team_level, mtd_salary)
+SELECT 'pl_id', 'pl_name', 'team_level', 'mtd_salary'
+FROM 'vw_U17_HighSalaryPlayers';
+-- EC_IT143_W4.2_hello_world_s7_fq.sql
+-- Step 7: Create a stored procedure to reload data from view into table
+
+CREATE OR ALTER PROCEDURE, 
+sp_LoadU17HighSalaryPlayers
+AS
+BEGIN
+    TRUNCATE TABLE tblU17_HighSalaryPlayers;
+
+    INSERT INTO tblU17_HighSalaryPlayers (pl_id, pl_name, team_level, mtd_salary)
+    SELECT 'pl_id', 'pl_name', 'team_level', 'mtd_salary'
+    FROM vw_U17_HighSalaryPlayers;
+END;
+-- EC_IT143_W4.2_hello_world_s8_fq.sql
+-- Step 8: Run the stored procedure to populate the table
+
+EXEC sp_LoadU17HighSalaryPlayers;
